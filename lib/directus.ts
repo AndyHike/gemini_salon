@@ -1,6 +1,6 @@
 import { createDirectus, rest } from '@directus/sdk';
 
-export const DIRECTUS_URL = 'http://directus-pgg4ksk0o040ogk8w0w8ccww.31.97.129.75.sslip.io:8055';
+export const DIRECTUS_URL = '/api';
 
 export interface Service {
   id: number;

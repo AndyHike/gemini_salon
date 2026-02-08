@@ -1,34 +1,62 @@
-# ЕТАП 1: Збірка (Builder)
+# --- ЕТАП 1: Збірка проекту (React + Vite) ---
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Копіюємо файли залежностей
+# Копіюємо залежності та встановлюємо їх
 COPY package.json package-lock.json* ./
-
-# Встановлюємо залежності
 RUN npm install
 
-# Копіюємо код проекту
+# Копіюємо весь код і робимо білд
 COPY . .
-
-# Робимо білд (створюється папка dist)
 RUN npm run build
 
-# ЕТАП 2: Запуск (Runner)
-FROM node:20-alpine AS runner
+# --- ЕТАП 2: Nginx + Автоматична конфігурація ---
+FROM nginx:alpine
 
-WORKDIR /app
+# Встановлюємо робочу папку для Nginx
+WORKDIR /usr/share/nginx/html
 
-# Встановлюємо пакет 'serve' глобально. 
-# Це міні-сервер, який просто віддає статику (HTML/CSS/JS).
-RUN npm install -g serve
+# Видаляємо стандартний конфіг
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Копіюємо тільки папку dist з попереднього етапу (щоб образ був легким)
-COPY --from=builder /app/dist ./dist
+# 1. СТВОРЮЄМО ШАБЛОН КОНФІГУРАЦІЇ ПРЯМО В DOCKERFILE
+# Ми використовуємо змінну $DIRECTUS_URL, яка підставиться при запуску
+RUN echo 'server { \
+    listen 80; \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    \
+    # Головна сторінка (Frontend) \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+    \
+    # Кешування статики \
+    location ~* \.(?:ico|css|js|gif|jpe?g|png|woff2?|eot|ttf|svg|mp4)$ { \
+        expires 6M; \
+        access_log off; \
+        add_header Cache-Control "public"; \
+    } \
+    \
+    # Проксі для API (Backend) \
+    location /api/ { \
+        rewrite ^/api/(.*) /$1 break; \
+        # $DIRECTUS_URL буде замінено на реальну адресу при запуску \
+        proxy_pass $DIRECTUS_URL; \
+        proxy_http_version 1.1; \
+        proxy_set_header Upgrade $http_upgrade; \
+        proxy_set_header Connection "upgrade"; \
+        proxy_set_header Host $host; \
+    } \
+}' > /etc/nginx/conf.d/default.conf.template
 
-# Вказуємо порт, на якому працюватиме контейнер
-EXPOSE 3000
+# Копіюємо зібраний React сайт з першого етапу
+COPY --from=builder /app/dist .
 
-# Запускаємо сервер для папки dist на 3000 порту
-CMD ["serve", "-s", "dist", "-l", "3000"]
+# Відкриваємо порт
+EXPOSE 80
+
+# 2. МАГІЧНА КОМАНДА ЗАПУСКУ
+# Вона бере змінну середовища з Coolify, вставляє її в конфіг і запускає Nginx
+CMD ["/bin/sh", "-c", "envsubst '$DIRECTUS_URL' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]

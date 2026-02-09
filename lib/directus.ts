@@ -1,5 +1,6 @@
 import { createDirectus, rest } from '@directus/sdk';
 
+// ВАЖЛИВО: Замініть це на ваш реальний URL Directus
 export const DIRECTUS_URL = 'http://directus-pgg4ksk0o040ogk8w0w8ccww.31.97.129.75.sslip.io';
 
 export interface Service {
@@ -17,7 +18,7 @@ export interface Service {
 
 export interface GalleryItem {
   id: number;
-  image: string; // UUID of the file in Directus
+  image: string; // UUID файлу
   alt: string;
   category?: string;
 }
@@ -27,12 +28,8 @@ interface Schema {
   gallery: GalleryItem[];
 }
 
-// Initialize the client
 export const directus = createDirectus<Schema>(DIRECTUS_URL).with(rest());
 
-/**
- * Helper to construct the full image URL from a Directus file ID
- */
 export const getImageUrl = (id: string) => {
   return `${DIRECTUS_URL}/assets/${id}`;
 };

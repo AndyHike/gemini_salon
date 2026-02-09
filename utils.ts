@@ -9,11 +9,14 @@ export const getLocalizedText = (item: any, lang: Language, prefix: string): str
 };
 
 /**
- * Helper to format price with currency
+ * Helper to format price.
+ * Hardcoded to Czech Koruna (Kč) as the backend does not provide currency.
  */
-export const formatPrice = (price: number, currency: string) => {
-  return new Intl.NumberFormat('en-US', {
+export const formatPrice = (price: number) => {
+  return new Intl.NumberFormat('cs-CZ', {
     style: 'currency',
-    currency: currency,
+    currency: 'CZK',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(price);
 };

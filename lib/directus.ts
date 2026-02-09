@@ -1,6 +1,6 @@
 import { createDirectus, rest } from '@directus/sdk';
 
-export const DIRECTUS_URL = 'http://directus-pgg4ksk0o040ogk8w0w8ccww.31.97.129.75.sslip.io';
+export const DIRECTUS_URL = 'https://YOUR-DIRECTUS-URL.com';
 
 export interface Service {
   id: number;
@@ -11,7 +11,7 @@ export interface Service {
   description_uk?: string;
   description_cs?: string;
   price: number;
-  currency: string;
+  currency?: string;
   category: 'hair' | 'nails' | 'face' | 'spa';
 }
 

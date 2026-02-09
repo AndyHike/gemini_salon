@@ -68,7 +68,7 @@ export const Services: React.FC<ServicesProps> = ({ lang }) => {
                         {/* Dotted line filler */}
                         <div className="absolute inset-x-0 bottom-1 border-b border-dotted border-stone-300" />
                         <span className="text-lg font-serif text-stone-600 bg-cream-50 pl-4 relative z-10">
-                          {formatPrice(service.price, service.currency)}
+                          {formatPrice(service.price)}
                         </span>
                       </div>
                       {/* Optional description support */}

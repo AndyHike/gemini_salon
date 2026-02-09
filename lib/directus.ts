@@ -1,7 +1,7 @@
 import { createDirectus, rest } from '@directus/sdk';
 
 // ВАЖЛИВО: Замініть це на ваш реальний URL Directus
-export const DIRECTUS_URL = 'http://directus-pgg4ksk0o040ogk8w0w8ccww.31.97.129.75.sslip.io';
+export const DIRECTUS_URL = 'https://directus-pgg4ksk0o040ogk8w0w8ccww.31.97.129.75.sslip.io';
 
 export interface Service {
   id: number;

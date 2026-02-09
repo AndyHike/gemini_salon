@@ -20,7 +20,7 @@ export const Services: React.FC<ServicesProps> = ({ lang }) => {
         const result = await directus.request(readItems('services', {
           sort: ['category_id', 'id'],
           // Fetch all fields + expand the category_id relation to get titles
-          fields: ['*', { category_id: ['id', 'title_en', 'title_uk', 'title_cs'] }]
+          fields: ['*', { category_id: ['id', 'name_en', 'name_uk', 'name_cs'] }]
         }));
         if (Array.isArray(result)) {
             setServices(result);

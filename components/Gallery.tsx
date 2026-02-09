@@ -16,11 +16,11 @@ export const Gallery: React.FC<GalleryProps> = ({ lang }) => {
   useEffect(() => {
     const fetchGallery = async () => {
       try {
-        // limit: 6 for performance on the home page
+        // Updated fields list: replaced 'alt' with 'title_uk'
         const result = await directus.request(readItems('gallery', {
           limit: 6,
-          sort: ['-id'], // Show newest items first
-          fields: ['id', 'image', 'alt']
+          sort: ['-id'],
+          fields: ['id', 'image', 'title_uk']
         }));
         if (Array.isArray(result)) {
             setItems(result);
@@ -63,7 +63,7 @@ export const Gallery: React.FC<GalleryProps> = ({ lang }) => {
                   >
                     <img
                         src={getImageUrl(item.image)}
-                        alt={item.alt || 'Gallery item'}
+                        alt={item.title_uk || 'Gallery item'}
                         loading="lazy"
                         className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                     />

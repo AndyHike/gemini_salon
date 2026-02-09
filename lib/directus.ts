@@ -13,13 +13,13 @@ export interface Service {
   description_cs?: string;
   price: number;
   currency?: string;
-  category: 'hair' | 'nails' | 'face' | 'spa';
+  category_id: string; // Changed from category to category_id
 }
 
 export interface GalleryItem {
   id: number;
   image: string; // UUID файлу
-  alt: string;
+  title_uk: string; // Changed from alt to title_uk
   category?: string;
 }
 

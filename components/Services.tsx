@@ -18,7 +18,7 @@ export const Services: React.FC<ServicesProps> = ({ lang }) => {
     const fetchServices = async () => {
       try {
         const result = await directus.request(readItems('services', {
-          sort: ['category', 'id']
+          sort: ['category_id', 'id'] // Changed sort from category to category_id
         }));
         if (Array.isArray(result)) {
             setServices(result);
@@ -32,7 +32,8 @@ export const Services: React.FC<ServicesProps> = ({ lang }) => {
     fetchServices();
   }, []);
 
-  const categories = Array.from(new Set(services.map(s => s.category)));
+  // Using category_id for grouping as per DB field names
+  const categories = Array.from(new Set(services.map(s => s.category_id)));
 
   if (error && services.length === 0) {
       return (
@@ -68,7 +69,7 @@ export const Services: React.FC<ServicesProps> = ({ lang }) => {
               </h3>
               
               <div className="grid grid-cols-1 gap-4">
-                {services.filter(s => s.category === category).map((service) => (
+                {services.filter(s => s.category_id === category).map((service) => (
                   <div 
                     key={service.id} 
                     className="group flex justify-between items-end border-b border-stone-100 pb-5 pt-2 hover:bg-white hover:px-4 -mx-4 transition-all duration-300 rounded-xl"

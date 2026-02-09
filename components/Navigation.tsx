@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Language, NavItem } from '../types';
 import { NAV_ITEMS } from '../data';
 import { getLocalizedText } from '../utils';
@@ -13,6 +14,8 @@ interface NavigationProps {
 export const Navigation: React.FC<NavigationProps> = ({ lang, setLang }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,6 +30,39 @@ export const Navigation: React.FC<NavigationProps> = ({ lang, setLang }) => {
     setIsMobileMenuOpen(false);
   };
 
+  const handleNavClick = (e: React.MouseEvent, item: NavItem) => {
+    e.preventDefault();
+    setIsMobileMenuOpen(false);
+
+    const targetId = item.key;
+
+    // Helper to scroll to element
+    const scrollToElement = () => {
+      const element = document.getElementById(targetId);
+      if (element) {
+        const headerOffset = 80;
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth"
+        });
+      } else if (targetId === 'home') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    // If we are not on the home page, navigate there first
+    if (location.pathname !== '/') {
+      navigate('/');
+      // Wait for navigation and mount
+      setTimeout(scrollToElement, 300);
+    } else {
+      // We are already on home, just scroll
+      scrollToElement();
+    }
+  };
+
   return (
     <nav
       className={`fixed w-full z-50 transition-all duration-300 ${
@@ -35,12 +71,15 @@ export const Navigation: React.FC<NavigationProps> = ({ lang, setLang }) => {
     >
       <div className="container mx-auto px-6 flex justify-between items-center">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-2 group">
+        <button 
+          onClick={(e) => handleNavClick(e, { key: 'home', label_en: '', label_uk: '', label_cs: '', href: '' })} 
+          className="flex items-center gap-2 group"
+        >
           <div className="p-2 border border-stone-800 rounded-full group-hover:border-gold-400 transition-colors">
             <Scissors className="w-5 h-5 text-stone-900 group-hover:text-gold-400 transition-colors" />
           </div>
           <span className="font-serif text-2xl font-bold tracking-widest text-stone-900">LUXE</span>
-        </a>
+        </button>
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">
@@ -49,7 +88,8 @@ export const Navigation: React.FC<NavigationProps> = ({ lang, setLang }) => {
               <a
                 key={item.key}
                 href={item.href}
-                className="text-sm uppercase tracking-widest hover:text-gold-400 transition-colors duration-300"
+                onClick={(e) => handleNavClick(e, item)}
+                className="text-sm uppercase tracking-widest hover:text-gold-400 transition-colors duration-300 cursor-pointer"
               >
                 {getLocalizedText(item, lang, 'label')}
               </a>
@@ -97,7 +137,7 @@ export const Navigation: React.FC<NavigationProps> = ({ lang, setLang }) => {
                 <a
                   key={item.key}
                   href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={(e) => handleNavClick(e, item)}
                   className="text-lg font-serif hover:text-gold-400"
                 >
                   {getLocalizedText(item, lang, 'label')}

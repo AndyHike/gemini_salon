@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../data';
 import { GalleryItem, directus, getImageUrl } from '../lib/directus';
@@ -46,7 +47,7 @@ export const Gallery: React.FC<GalleryProps> = ({ lang }) => {
         </div>
 
         {items.length === 0 ? (
-           <div className="text-center text-stone-400 font-light py-20">
+           <div className="text-center text-stone-400 font-light py-20 italic">
              {error ? "Please check your Directus connection." : "Curating our best works..."}
            </div>
         ) : (
@@ -81,13 +82,15 @@ export const Gallery: React.FC<GalleryProps> = ({ lang }) => {
 
             {/* Show More Button */}
             <div className="text-center">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="px-12 py-4 border border-stone-800 text-stone-800 text-xs uppercase tracking-[0.3em] font-bold hover:bg-stone-900 hover:text-white transition-all duration-300"
-              >
-                Explore All Works
-              </motion.button>
+              <Link to="/gallery">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="px-12 py-4 border border-stone-800 text-stone-800 text-xs uppercase tracking-[0.3em] font-bold hover:bg-stone-900 hover:text-white transition-all duration-300"
+                >
+                  Explore All Works
+                </motion.button>
+              </Link>
             </div>
           </>
         )}

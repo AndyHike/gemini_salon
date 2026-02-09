@@ -89,10 +89,10 @@ export const GALLERY: GalleryItem[] = [
 ];
 
 export const NAV_ITEMS: NavItem[] = [
-  { key: 'home', label_en: 'Home', label_uk: 'Головна', label_cs: 'Domů', href: '#home' },
-  { key: 'services', label_en: 'Services', label_uk: 'Послуги', label_cs: 'Služby', href: '#services' },
-  { key: 'gallery', label_en: 'Gallery', label_uk: 'Галерея', label_cs: 'Galerie', href: '#gallery' },
-  { key: 'contact', label_en: 'Contact', label_uk: 'Контакти', label_cs: 'Kontakt', href: '#contact' },
+  { key: 'home', label_en: 'Home', label_uk: 'Головна', label_cs: 'Domů', href: '/#home' },
+  { key: 'services', label_en: 'Services', label_uk: 'Послуги', label_cs: 'Služby', href: '/#services' },
+  { key: 'gallery', label_en: 'Gallery', label_uk: 'Галерея', label_cs: 'Galerie', href: '/#gallery' },
+  { key: 'contact', label_en: 'Contact', label_uk: 'Контакти', label_cs: 'Kontakt', href: '/#contact' },
 ];
 
 export const TRANSLATIONS = {
@@ -119,7 +119,7 @@ export const TRANSLATIONS = {
   gallery_title: {
     en: "Moments of Beauty",
     uk: "Моменти Краси",
-    cs: "Okamžiky Krásy"
+    cs: "Okamžiky Краси"
   },
   contact_us: {
     en: "Contact Us",

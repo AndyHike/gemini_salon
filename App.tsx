@@ -1,28 +1,29 @@
 import React, { useState } from 'react';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { Language } from './types';
 import { Navigation } from './components/Navigation';
-import { Hero } from './components/Hero';
-import { Services } from './components/Services';
-import { Gallery } from './components/Gallery';
-import { Contact } from './components/Contact';
 import { Footer } from './components/Footer';
+import { Home } from './pages/Home';
+import { GalleryPage } from './pages/GalleryPage';
 
 function App() {
   const [lang, setLang] = useState<Language>('uk');
 
   return (
-    <div className="min-h-screen bg-cream-50 font-sans selection:bg-gold-400 selection:text-white overflow-x-hidden">
-      <Navigation lang={lang} setLang={setLang} />
-      
-      <main>
-        <Hero lang={lang} />
-        <Services lang={lang} />
-        <Gallery lang={lang} />
-        <Contact lang={lang} />
-      </main>
+    <HashRouter>
+      <div className="min-h-screen bg-cream-50 font-sans selection:bg-gold-400 selection:text-white overflow-x-hidden">
+        <Navigation lang={lang} setLang={setLang} />
+        
+        <main>
+          <Routes>
+            <Route path="/" element={<Home lang={lang} />} />
+            <Route path="/gallery" element={<GalleryPage lang={lang} />} />
+          </Routes>
+        </main>
 
-      <Footer lang={lang} />
-    </div>
+        <Footer lang={lang} />
+      </div>
+    </HashRouter>
   );
 }
 

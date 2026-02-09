@@ -1,7 +1,7 @@
 import { createDirectus, rest } from '@directus/sdk';
 
 // ВАЖЛИВО: Замініть це на ваш реальний URL Directus
-export const DIRECTUS_URL = 'http://salonadmin.mobil-brevnov.cz';
+export const DIRECTUS_URL = 'https://salonadmin.mobil-brevnov.cz';
 
 export interface Service {
   id: number;

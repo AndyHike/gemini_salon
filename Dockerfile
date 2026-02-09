@@ -1,0 +1,34 @@
+# ЕТАП 1: Збірка (Builder)
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Копіюємо файли залежностей
+COPY package.json package-lock.json* ./
+
+# Встановлюємо залежності
+RUN npm install
+
+# Копіюємо код проекту
+COPY . .
+
+# Робимо білд (створюється папка dist)
+RUN npm run build
+
+# ЕТАП 2: Запуск (Runner)
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Встановлюємо пакет 'serve' глобально. 
+# Це міні-сервер, який просто віддає статику (HTML/CSS/JS).
+RUN npm install -g serve
+
+# Копіюємо тільки папку dist з попереднього етапу (щоб образ був легким)
+COPY --from=builder /app/dist ./dist
+
+# Вказуємо порт, на якому працюватиме контейнер
+EXPOSE 3000
+
+# Запускаємо сервер для папки dist на 3000 порту
+CMD ["serve", "-s", "dist", "-l", "3000"]

@@ -3,6 +3,13 @@ import { createDirectus, rest } from '@directus/sdk';
 // ВАЖЛИВО: Замініть це на ваш реальний URL Directus
 export const DIRECTUS_URL = 'https://salonadmin.mobil-brevnov.cz';
 
+export interface ServiceCategory {
+  id: number;
+  title_en: string;
+  title_uk: string;
+  title_cs: string;
+}
+
 export interface Service {
   id: number;
   name_en: string;
@@ -13,7 +20,7 @@ export interface Service {
   description_cs?: string;
   price: number;
   currency?: string;
-  category_id: string; // Changed from category to category_id
+  category_id: number | ServiceCategory; // Supports both ID (unexpanded) and object (expanded)
 }
 
 export interface GalleryItem {

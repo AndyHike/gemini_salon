@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../data';
-import { Service, directus } from '../lib/directus';
+import { Service, ServiceCategory, directus } from '../lib/directus';
 import { readItems } from '@directus/sdk';
 import { getLocalizedText, formatPrice } from '../utils';
 import { motion } from 'framer-motion';
@@ -18,7 +18,9 @@ export const Services: React.FC<ServicesProps> = ({ lang }) => {
     const fetchServices = async () => {
       try {
         const result = await directus.request(readItems('services', {
-          sort: ['category_id', 'id'] // Changed sort from category to category_id
+          sort: ['category_id', 'id'],
+          // Fetch all fields + expand the category_id relation to get titles
+          fields: ['*', { category_id: ['id', 'title_en', 'title_uk', 'title_cs'] }]
         }));
         if (Array.isArray(result)) {
             setServices(result);
@@ -32,8 +34,21 @@ export const Services: React.FC<ServicesProps> = ({ lang }) => {
     fetchServices();
   }, []);
 
-  // Using category_id for grouping as per DB field names
-  const categories = Array.from(new Set(services.map(s => s.category_id)));
+  // Extract unique categories from the fetched services
+  // We use a Map to ensure uniqueness based on category ID
+  const uniqueCategories: ServiceCategory[] = [];
+  const seenCategoryIds = new Set<number>();
+
+  services.forEach(service => {
+    // Check if category_id is an object (expanded) and not null
+    if (service.category_id && typeof service.category_id === 'object') {
+      const cat = service.category_id as ServiceCategory;
+      if (!seenCategoryIds.has(cat.id)) {
+        seenCategoryIds.add(cat.id);
+        uniqueCategories.push(cat);
+      }
+    }
+  });
 
   if (error && services.length === 0) {
       return (
@@ -55,21 +70,23 @@ export const Services: React.FC<ServicesProps> = ({ lang }) => {
         </div>
 
         <div className="space-y-24">
-          {categories.map((category, catIndex) => (
+          {uniqueCategories.map((category, catIndex) => (
             <motion.div
-              key={category}
+              key={category.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: catIndex * 0.1 }}
             >
               <h3 className="text-2xl font-serif text-stone-900 mb-10 capitalize tracking-[0.2em] flex items-center gap-6">
-                <span className="shrink-0">{category}</span>
+                <span className="shrink-0">{getLocalizedText(category, lang, 'title')}</span>
                 <span className="h-px w-full bg-stone-200" />
               </h3>
               
               <div className="grid grid-cols-1 gap-4">
-                {services.filter(s => s.category_id === category).map((service) => (
+                {services
+                  .filter(s => (s.category_id as ServiceCategory).id === category.id)
+                  .map((service) => (
                   <div 
                     key={service.id} 
                     className="group flex justify-between items-end border-b border-stone-100 pb-5 pt-2 hover:bg-white hover:px-4 -mx-4 transition-all duration-300 rounded-xl"
@@ -78,14 +95,12 @@ export const Services: React.FC<ServicesProps> = ({ lang }) => {
                       <h4 className="text-lg md:text-xl font-medium text-stone-800 group-hover:text-gold-500 transition-colors duration-300 mb-1">
                         {getLocalizedText(service, lang, 'name')}
                       </h4>
-                      {/* Fixed HTML Rendering with line-clamp and break-words */}
                       <div 
                         className="text-stone-500 text-sm font-light break-words line-clamp-2 prose-sm prose-stone"
                         dangerouslySetInnerHTML={{ __html: getLocalizedText(service, lang, 'description') }}
                       />
                     </div>
                     
-                    {/* Rigid Price Alignment */}
                     <div className="text-gold-500 font-serif text-xl md:text-2xl whitespace-nowrap shrink-0 ml-4 mb-1">
                       {formatPrice(service.price)}
                     </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Language } from './types';
 import { Navigation } from './components/Navigation';
 import { Footer } from './components/Footer';
@@ -10,7 +10,7 @@ function App() {
   const [lang, setLang] = useState<Language>('uk');
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <div className="min-h-screen bg-cream-50 font-sans selection:bg-gold-400 selection:text-white overflow-x-hidden">
         <Navigation lang={lang} setLang={setLang} />
         
@@ -23,7 +23,7 @@ function App() {
 
         <Footer lang={lang} />
       </div>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 

@@ -5,6 +5,7 @@ import { TRANSLATIONS } from '../data';
 import { GalleryItem, directus, getImageUrl } from '../lib/directus';
 import { readItems } from '@directus/sdk';
 import { motion } from 'framer-motion';
+import { FadeImage } from './FadeImage';
 
 interface GalleryProps {
   lang: Language;
@@ -62,10 +63,10 @@ export const Gallery: React.FC<GalleryProps> = ({ lang }) => {
                     transition={{ delay: index * 0.05, duration: 0.5 }}
                     className="relative group aspect-[4/5] overflow-hidden rounded-2xl shadow-2xl shadow-stone-300/20"
                   >
-                    <img
+                    <FadeImage
                         src={getImageUrl(item.image)}
                         alt={item.title_uk || 'Gallery item'}
-                        loading="lazy"
+                        containerClassName="w-full h-full"
                         className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                     />
                     {/* Luxury Overlay */}

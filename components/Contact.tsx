@@ -1,17 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../data';
-import { MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, CheckCircle } from 'lucide-react'; // Додав іконку успіху
 import { motion } from 'framer-motion';
+import { createItem } from '@directus/sdk';
+import { directus } from '../lib/directus'; // Переконайтесь, що шлях правильний
 
 interface ContactProps {
   lang: Language;
 }
 
 export const Contact: React.FC<ContactProps> = ({ lang }) => {
+  // Стан форми
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+
+  // Стан відправки: 'idle' | 'loading' | 'success' | 'error'
+  const [status, setStatus] = useState('idle');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.type === 'email' ? 'email' : e.target.type === 'text' ? 'name' : 'message']: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); // Зупиняємо перезавантаження сторінки
+    setStatus('loading');
+
+    try {
+      await directus.request(createItem('contact_messages', {
+        name: formData.name,
+        email: formData.email,
+        message: formData.message,
+        subject: 'Нове повідомлення з сайту' // Заповнюємо службове поле
+      }));
+
+      setStatus('success');
+      setFormData({ name: '', email: '', message: '' }); // Очистити форму
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setStatus('error');
+    }
+  };
+
   return (
     <section id="contact" className="py-24 px-6 bg-cream-50 relative overflow-hidden">
-        {/* Subtle decorative background circle */}
+        {/* Decorative background */}
         <div className="absolute -top-20 -right-20 w-96 h-96 border border-gold-400/20 rounded-full pointer-events-none" />
 
       <div className="max-w-6xl mx-auto">
@@ -72,46 +108,78 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
              initial={{ opacity: 0, x: 30 }}
              whileInView={{ opacity: 1, x: 0 }}
              viewport={{ once: true }}
-             className="bg-white p-8 md:p-12 shadow-sm border border-stone-100"
+             className="bg-white p-8 md:p-12 shadow-sm border border-stone-100 min-h-[400px] flex items-center"
           >
-            <form className="space-y-6">
-              <div>
-                <label className="block text-sm uppercase tracking-wider text-stone-500 mb-2">
-                    {TRANSLATIONS.name_placeholder[lang]}
-                </label>
-                <input 
-                  type="text" 
-                  className="w-full bg-cream-50 border-b border-stone-300 p-3 focus:outline-none focus:border-gold-400 transition-colors"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm uppercase tracking-wider text-stone-500 mb-2">
-                    {TRANSLATIONS.email_placeholder[lang]}
-                </label>
-                <input 
-                  type="email" 
-                  className="w-full bg-cream-50 border-b border-stone-300 p-3 focus:outline-none focus:border-gold-400 transition-colors"
-                />
-              </div>
+            {status === 'success' ? (
+                // Блок успішної відправки
+                <div className="w-full text-center space-y-4">
+                    <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                        <CheckCircle className="w-8 h-8 text-green-600" />
+                    </div>
+                    <h3 className="font-serif text-2xl text-stone-800">Дякуємо!</h3>
+                    <p className="text-stone-600">Ваше повідомлення успішно надіслано.</p>
+                    <button 
+                        onClick={() => setStatus('idle')}
+                        className="text-gold-600 hover:text-gold-700 underline text-sm mt-4"
+                    >
+                        Надіслати ще одне
+                    </button>
+                </div>
+            ) : (
+                // Форма
+                <form onSubmit={handleSubmit} className="space-y-6 w-full">
+                <div>
+                    <label className="block text-sm uppercase tracking-wider text-stone-500 mb-2">
+                        {TRANSLATIONS.name_placeholder[lang]}
+                    </label>
+                    <input 
+                    type="text" 
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full bg-cream-50 border-b border-stone-300 p-3 focus:outline-none focus:border-gold-400 transition-colors"
+                    />
+                </div>
+                
+                <div>
+                    <label className="block text-sm uppercase tracking-wider text-stone-500 mb-2">
+                        {TRANSLATIONS.email_placeholder[lang]}
+                    </label>
+                    <input 
+                    type="email" 
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="w-full bg-cream-50 border-b border-stone-300 p-3 focus:outline-none focus:border-gold-400 transition-colors"
+                    />
+                </div>
 
-              <div>
-                <label className="block text-sm uppercase tracking-wider text-stone-500 mb-2">
-                    {TRANSLATIONS.message_placeholder[lang]}
-                </label>
-                <textarea 
-                  rows={4}
-                  className="w-full bg-cream-50 border-b border-stone-300 p-3 focus:outline-none focus:border-gold-400 transition-colors resize-none"
-                />
-              </div>
+                <div>
+                    <label className="block text-sm uppercase tracking-wider text-stone-500 mb-2">
+                        {TRANSLATIONS.message_placeholder[lang]}
+                    </label>
+                    <textarea 
+                    rows={4}
+                    required
+                    value={formData.message}
+                    onChange={(e) => setFormData({...formData, message: e.target.value})}
+                    className="w-full bg-cream-50 border-b border-stone-300 p-3 focus:outline-none focus:border-gold-400 transition-colors resize-none"
+                    />
+                </div>
 
-              <button 
-                type="button"
-                className="w-full bg-stone-900 text-white py-4 text-sm uppercase tracking-widest hover:bg-gold-500 transition-colors duration-300"
-              >
-                {TRANSLATIONS.send_message[lang]}
-              </button>
-            </form>
+                <button 
+                    type="submit"
+                    disabled={status === 'loading'}
+                    className="w-full bg-stone-900 text-white py-4 text-sm uppercase tracking-widest hover:bg-gold-500 transition-colors duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                    {status === 'loading' ? 'Sending...' : TRANSLATIONS.send_message[lang]}
+                </button>
+
+                {status === 'error' && (
+                    <p className="text-red-500 text-center text-sm">Виникла помилка. Спробуйте пізніше.</p>
+                )}
+                </form>
+            )}
           </motion.div>
 
         </div>

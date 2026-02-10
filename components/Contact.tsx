@@ -53,10 +53,10 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
       // 1. Завантаження файлу (якщо є)
       if (selectedFile) {
         const formDataObj = new FormData();
-        formDataObj.append('file', selectedFile);
-        
         // --- ВАЖЛИВО: Вказуємо папку, щоб пройти валідацію Directus ---
         formDataObj.append('folder', INBOX_FOLDER_ID); 
+        formDataObj.append('file', selectedFile);
+        
         
         const fileResponse = await directus.request(uploadFiles(formDataObj));
         // Отримуємо ID (Directus може повернути об'єкт або масив)

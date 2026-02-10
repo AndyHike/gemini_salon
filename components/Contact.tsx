@@ -11,7 +11,11 @@ interface ContactProps {
 }
 
 export const Contact: React.FC<ContactProps> = ({ lang }) => {
-  // Стан для текстових полів
+  // --- КОНФІГУРАЦІЯ ---
+  // ID папки "Inbox" для заявок (взято з ваших налаштувань)
+  const INBOX_FOLDER_ID = "4a9a897e-d787-4fd5-8914-ef91b830bbf1"; 
+
+  // --- СТАНИ ---
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,13 +23,11 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
     message: ''
   });
 
-  // Стан для файлу
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Стан відправки
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
+  // --- ОБРОБНИКИ ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -48,25 +50,26 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
     try {
       let attachmentId = null;
 
-      // 1. Якщо є файл, спочатку вантажимо його в Directus Files
+      // 1. Завантаження файлу (якщо є)
       if (selectedFile) {
         const formDataObj = new FormData();
-        formDataObj.append('folder', ''); // Можна вказати ID папки, якщо треба
         formDataObj.append('file', selectedFile);
         
-        // Відправляємо файл
+        // --- ВАЖЛИВО: Вказуємо папку, щоб пройти валідацію Directus ---
+        formDataObj.append('folder', INBOX_FOLDER_ID); 
+        
         const fileResponse = await directus.request(uploadFiles(formDataObj));
-        // Directus може повернути об'єкт або масив, беремо ID
+        // Отримуємо ID (Directus може повернути об'єкт або масив)
         attachmentId = fileResponse.id || (fileResponse as any)[0]?.id; 
       }
 
-      // 2. Створюємо повідомлення з прив'язкою файлу (якщо є)
+      // 2. Створення заявки
       await directus.request(createItem('contact_messages', {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         message: formData.message,
-        attachment: attachmentId, // Прив'язуємо ID картинки
+        attachment: attachmentId, // Прив'язуємо ID завантаженого файлу
         subject: 'Нова заявка з сайту (+ фото)'
       }));
 
@@ -175,7 +178,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                     <input 
                     type="text" 
                     name="name"
-                    autoComplete="name" // Автозаповнення
+                    autoComplete="name"
                     required
                     value={formData.name}
                     onChange={handleChange}
@@ -192,7 +195,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                     <input 
                     type="email" 
                     name="email"
-                    autoComplete="email" // Автозаповнення
+                    autoComplete="email"
                     required
                     value={formData.email}
                     onChange={handleChange}
@@ -201,7 +204,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                     />
                 </div>
 
-                {/* Телефон (НОВЕ) */}
+                {/* Телефон */}
                 <div>
                     <label className="block text-xs uppercase tracking-widest text-stone-500 mb-2 font-medium">
                         Телефон
@@ -209,7 +212,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                     <input 
                     type="tel" 
                     name="phone"
-                    autoComplete="tel" // Автозаповнення
+                    autoComplete="tel"
                     value={formData.phone}
                     onChange={handleChange}
                     className="w-full bg-cream-50 border border-stone-200 p-3 rounded-md focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all"
@@ -233,14 +236,14 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                     />
                 </div>
 
-                {/* Завантаження файлу (НОВЕ) */}
+                {/* Завантаження файлу */}
                 <div>
                     <input 
                         type="file"
                         ref={fileInputRef}
                         onChange={handleFileChange}
                         className="hidden"
-                        accept="image/*" // Тільки картинки
+                        accept="image/*"
                     />
                     
                     {!selectedFile ? (

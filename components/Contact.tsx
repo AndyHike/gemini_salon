@@ -1,44 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../data';
-import { MapPin, Phone, Mail, Clock, CheckCircle } from 'lucide-react'; // Додав іконку успіху
+import { MapPin, Phone, Mail, Clock, CheckCircle, Paperclip, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { createItem } from '@directus/sdk';
-import { directus } from '../lib/directus'; // Переконайтесь, що шлях правильний
+import { createItem, uploadFiles } from '@directus/sdk';
+import { directus } from '../lib/directus';
 
 interface ContactProps {
   lang: Language;
 }
 
 export const Contact: React.FC<ContactProps> = ({ lang }) => {
-  // Стан форми
+  // Стан для текстових полів
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     message: ''
   });
 
-  // Стан відправки: 'idle' | 'loading' | 'success' | 'error'
-  const [status, setStatus] = useState('idle');
+  // Стан для файлу
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Стан відправки
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.type === 'email' ? 'email' : e.target.type === 'text' ? 'name' : 'message']: e.target.value });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Зупиняємо перезавантаження сторінки
+    e.preventDefault();
     setStatus('loading');
 
     try {
+      let attachmentId = null;
+
+      // 1. Якщо є файл, спочатку вантажимо його в Directus Files
+      if (selectedFile) {
+        const formDataObj = new FormData();
+        formDataObj.append('folder', ''); // Можна вказати ID папки, якщо треба
+        formDataObj.append('file', selectedFile);
+        
+        // Відправляємо файл
+        const fileResponse = await directus.request(uploadFiles(formDataObj));
+        // Directus може повернути об'єкт або масив, беремо ID
+        attachmentId = fileResponse.id || (fileResponse as any)[0]?.id; 
+      }
+
+      // 2. Створюємо повідомлення з прив'язкою файлу (якщо є)
       await directus.request(createItem('contact_messages', {
         name: formData.name,
         email: formData.email,
+        phone: formData.phone,
         message: formData.message,
-        subject: 'Нове повідомлення з сайту' // Заповнюємо службове поле
+        attachment: attachmentId, // Прив'язуємо ID картинки
+        subject: 'Нова заявка з сайту (+ фото)'
       }));
 
       setStatus('success');
-      setFormData({ name: '', email: '', message: '' }); // Очистити форму
+      setFormData({ name: '', email: '', phone: '', message: '' });
+      removeFile();
     } catch (error) {
       console.error('Error sending message:', error);
       setStatus('error');
@@ -68,6 +102,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
             </div>
 
             <div className="space-y-6">
+              {/* Адреса */}
               <div className="flex items-start gap-4">
                 <MapPin className="text-gold-500 w-6 h-6 mt-1" />
                 <div>
@@ -76,6 +111,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                 </div>
               </div>
 
+              {/* Телефон */}
               <div className="flex items-start gap-4">
                 <Phone className="text-gold-500 w-6 h-6 mt-1" />
                 <div>
@@ -84,6 +120,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                 </div>
               </div>
 
+              {/* Пошта */}
               <div className="flex items-start gap-4">
                 <Mail className="text-gold-500 w-6 h-6 mt-1" />
                 <div>
@@ -92,6 +129,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                 </div>
               </div>
 
+              {/* Години */}
               <div className="flex items-start gap-4">
                 <Clock className="text-gold-500 w-6 h-6 mt-1" />
                 <div>
@@ -108,10 +146,10 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
              initial={{ opacity: 0, x: 30 }}
              whileInView={{ opacity: 1, x: 0 }}
              viewport={{ once: true }}
-             className="bg-white p-8 md:p-12 shadow-sm border border-stone-100 min-h-[400px] flex items-center"
+             className="bg-white p-8 md:p-12 shadow-sm border border-stone-100 min-h-[400px] flex items-center rounded-xl"
           >
             {status === 'success' ? (
-                // Блок успішної відправки
+                // SUCCESS STATE
                 <div className="w-full text-center space-y-4">
                     <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
                         <CheckCircle className="w-8 h-8 text-green-600" />
@@ -126,57 +164,120 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                     </button>
                 </div>
             ) : (
-                // Форма
-                <form onSubmit={handleSubmit} className="space-y-6 w-full">
+                // FORM STATE
+                <form onSubmit={handleSubmit} className="space-y-5 w-full">
+                
+                {/* Ім'я */}
                 <div>
-                    <label className="block text-sm uppercase tracking-wider text-stone-500 mb-2">
+                    <label className="block text-xs uppercase tracking-widest text-stone-500 mb-2 font-medium">
                         {TRANSLATIONS.name_placeholder[lang]}
                     </label>
                     <input 
                     type="text" 
+                    name="name"
+                    autoComplete="name" // Автозаповнення
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full bg-cream-50 border-b border-stone-300 p-3 focus:outline-none focus:border-gold-400 transition-colors"
+                    onChange={handleChange}
+                    className="w-full bg-cream-50 border border-stone-200 p-3 rounded-md focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all"
+                    placeholder="Ім'я"
                     />
                 </div>
                 
+                {/* Email */}
                 <div>
-                    <label className="block text-sm uppercase tracking-wider text-stone-500 mb-2">
+                    <label className="block text-xs uppercase tracking-widest text-stone-500 mb-2 font-medium">
                         {TRANSLATIONS.email_placeholder[lang]}
                     </label>
                     <input 
                     type="email" 
+                    name="email"
+                    autoComplete="email" // Автозаповнення
                     required
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full bg-cream-50 border-b border-stone-300 p-3 focus:outline-none focus:border-gold-400 transition-colors"
+                    onChange={handleChange}
+                    className="w-full bg-cream-50 border border-stone-200 p-3 rounded-md focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all"
+                    placeholder="example@gmail.com"
                     />
                 </div>
 
+                {/* Телефон (НОВЕ) */}
                 <div>
-                    <label className="block text-sm uppercase tracking-wider text-stone-500 mb-2">
+                    <label className="block text-xs uppercase tracking-widest text-stone-500 mb-2 font-medium">
+                        Телефон
+                    </label>
+                    <input 
+                    type="tel" 
+                    name="phone"
+                    autoComplete="tel" // Автозаповнення
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full bg-cream-50 border border-stone-200 p-3 rounded-md focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all"
+                    placeholder="+380..."
+                    />
+                </div>
+
+                {/* Повідомлення */}
+                <div>
+                    <label className="block text-xs uppercase tracking-widest text-stone-500 mb-2 font-medium">
                         {TRANSLATIONS.message_placeholder[lang]}
                     </label>
                     <textarea 
-                    rows={4}
+                    name="message"
+                    rows={3}
                     required
                     value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    className="w-full bg-cream-50 border-b border-stone-300 p-3 focus:outline-none focus:border-gold-400 transition-colors resize-none"
+                    onChange={handleChange}
+                    className="w-full bg-cream-50 border border-stone-200 p-3 rounded-md focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all resize-none"
+                    placeholder="Ваш коментар..."
                     />
+                </div>
+
+                {/* Завантаження файлу (НОВЕ) */}
+                <div>
+                    <input 
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                        accept="image/*" // Тільки картинки
+                    />
+                    
+                    {!selectedFile ? (
+                        <button 
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center gap-2 text-stone-500 hover:text-gold-600 transition-colors text-sm"
+                        >
+                            <Paperclip className="w-4 h-4" />
+                            <span>Прикріпити фото (референс)</span>
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-2 bg-stone-100 px-3 py-2 rounded-md inline-flex">
+                            <span className="text-sm text-stone-700 truncate max-w-[200px]">
+                                {selectedFile.name}
+                            </span>
+                            <button 
+                                type="button" 
+                                onClick={removeFile}
+                                className="text-stone-400 hover:text-red-500"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 <button 
                     type="submit"
                     disabled={status === 'loading'}
-                    className="w-full bg-stone-900 text-white py-4 text-sm uppercase tracking-widest hover:bg-gold-500 transition-colors duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full bg-stone-900 text-white py-4 text-sm uppercase tracking-widest hover:bg-gold-600 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed rounded-md mt-2 shadow-lg shadow-stone-200"
                 >
-                    {status === 'loading' ? 'Sending...' : TRANSLATIONS.send_message[lang]}
+                    {status === 'loading' ? 'Відправка...' : TRANSLATIONS.send_message[lang]}
                 </button>
 
                 {status === 'error' && (
-                    <p className="text-red-500 text-center text-sm">Виникла помилка. Спробуйте пізніше.</p>
+                    <p className="text-red-500 text-center text-sm">Виникла помилка. Перевірте з'єднання.</p>
                 )}
                 </form>
             )}
